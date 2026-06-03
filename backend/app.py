@@ -11,11 +11,17 @@ app = Flask(__name__)
 CORS(app)
 
 
+# =========================
+# HOME
+# =========================
 @app.route("/")
 def home():
-    return {"status": "PRO AI SYSTEM RUNNING"}
+    return {"status": "AI Trading System Running"}
 
 
+# =========================
+# SIGNAL API
+# =========================
 @app.route("/signal")
 def signal():
 
@@ -51,7 +57,9 @@ def signal():
     }
 
 
-# 🔥 NEW: Candlestick API
+# =========================
+# CANDLES API (FIXED)
+# =========================
 @app.route("/candles")
 def candles():
 
@@ -66,4 +74,7 @@ def candles():
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=10000)
+    import os
+    port = int(os.environ.get("PORT", 10000))
+
+    app.run(host="0.0.0.0", port=port)
