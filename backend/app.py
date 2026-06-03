@@ -1,80 +1,71 @@
-from flask import Flask, request
-from flask_cors import CORS
-import pandas as pd
+from flask import Flask, jsonify, request
 
-from market_data import get_candles
-from features import create_features
-from indicators import add_indicators
-from signal_engine import predict_signal
+from market_data import get_market_data
+from signal_engine import generate_signal
 
 app = Flask(__name__)
-CORS(app)
 
-
-# =========================
-# HOME
-# =========================
 @app.route("/")
 def home():
-    return {"status": "AI Trading System Running"}
+
+    return jsonify({
+        "status": "AI Trading System Running"
+    })
 
 
-# =========================
-# SIGNAL API
-# =========================
 @app.route("/signal")
 def signal():
 
-    pair = request.args.get("pair", "EURUSD")
+    try:
 
-    candles = get_candles(pair)
+        pair = request.args.get(
+            "pair",
+            "EURUSD"
+        )
 
-    if not candles or len(candles) < 10:
-        return {
-            "pair": pair,
+        timeframe = request.args.get(
+            "tf",
+            "1min"
+        )
+
+        df = get_market_data(
+            pair,
+            timeframe
+        )
+
+        if df is None or len(df) == 0:
+
+            return jsonify({
+                "pair": pair,
+                "signal": "AVOID",
+                "reason": "No candle data"
+            })
+
+        result = generate_signal(df)
+
+        result["pair"] = pair
+
+        return jsonify(result)
+
+    except Exception as e:
+
+        return jsonify({
             "signal": "AVOID",
-            "reason": "No candle data"
-        }
-
-    df = pd.DataFrame(candles)
-    df = create_features(df)
-    df = add_indicators(df)
-
-    last = df.iloc[-1]
-
-    features = [
-        last["body"],
-        last["range"],
-        last["trend"],
-        last["momentum"]
-    ]
-
-    result = predict_signal(features, df)
-
-    return {
-        "pair": pair,
-        **result
-    }
+            "error": str(e)
+        })
 
 
-# =========================
-# CANDLES API (FIXED)
-# =========================
-@app.route("/candles")
-def candles():
+@app.route("/health")
+def health():
 
-    pair = request.args.get("pair", "EURUSD")
-
-    data = get_candles(pair)
-
-    return {
-        "pair": pair,
-        "candles": data[-50:]
-    }
+    return jsonify({
+        "status": "healthy"
+    })
 
 
 if __name__ == "__main__":
-    import os
-    port = int(os.environ.get("PORT", 10000))
 
-    app.run(host="0.0.0.0", port=port)
+    app.run(
+        host="0.0.0.0",
+        port=10000
+    )
