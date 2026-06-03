@@ -1,24 +1,27 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>AI Trading System</title>
+  <title>PRO AI TRADING</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<h2>AI Trading Signals</h2>
+<h1>AI Trading Dashboard</h1>
 
 <select id="pair">
   <option>EURUSD</option>
   <option>GBPUSD</option>
   <option>USDJPY</option>
-  <option>AUDUSD</option>
 </select>
 
-<button onclick="getSignal()">Get Signal</button>
+<button onclick="getSignal()">GET SIGNAL</button>
 
-<div id="result">Waiting...</div>
+<div id="signalBox"></div>
 
+<canvas id="chart"></canvas>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="app.js"></script>
+
 </body>
 </html>
