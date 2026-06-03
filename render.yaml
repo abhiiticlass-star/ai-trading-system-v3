@@ -1,0 +1,6 @@
+services:
+  - type: web
+    name: ai-trading-system-v3
+    env: python
+    buildCommand: pip install -r backend/requirements.txt
+    startCommand: python backend/app.py
