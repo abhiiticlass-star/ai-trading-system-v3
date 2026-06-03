@@ -1,18 +1,15 @@
 from datetime import datetime
-import pytz
 
 def current_session():
 
-    india = pytz.timezone("Asia/Kolkata")
+    hour = datetime.utcnow().hour
 
-    now = datetime.now(india)
+    # UTC based rough sessions
 
-    hour = now.hour
-
-    if 12 <= hour <= 17:
+    if 7 <= hour <= 15:
         return "London"
 
-    if 17 <= hour <= 22:
+    if 12 <= hour <= 21:
         return "New York"
 
     return "Asian"
