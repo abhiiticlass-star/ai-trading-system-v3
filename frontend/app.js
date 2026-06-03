@@ -1,9 +1,14 @@
+const API = "https://your-render-url.onrender.com";
+
 async function getSignal() {
+
     let pair = document.getElementById("pair").value;
 
-    let res = await fetch(`http://localhost:5000/signal?pair=${pair}`);
+    let res = await fetch(`${API}/signal?pair=${pair}`);
     let data = await res.json();
 
-    document.getElementById("result").innerHTML =
-        `Signal: ${data.signal} <br> UP: ${data.up_probability}`;
+    document.getElementById("signalBox").innerHTML =
+    `<h2>${data.signal}</h2>
+     <p>UP: ${data.up_probability}</p>
+     <p>DOWN: ${data.down_probability}</p>`;
 }
