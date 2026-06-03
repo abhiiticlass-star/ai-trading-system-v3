@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request
 from flask_cors import CORS
 import pandas as pd
 
@@ -23,6 +23,13 @@ def signal():
 
     candles = get_candles(pair)
 
+    if not candles or len(candles) < 10:
+        return {
+            "pair": pair,
+            "signal": "AVOID",
+            "reason": "No candle data"
+        }
+
     df = pd.DataFrame(candles)
     df = create_features(df)
     df = add_indicators(df)
@@ -41,6 +48,20 @@ def signal():
     return {
         "pair": pair,
         **result
+    }
+
+
+# 🔥 NEW: Candlestick API
+@app.route("/candles")
+def candles():
+
+    pair = request.args.get("pair", "EURUSD")
+
+    data = get_candles(pair)
+
+    return {
+        "pair": pair,
+        "candles": data[-50:]
     }
 
 
