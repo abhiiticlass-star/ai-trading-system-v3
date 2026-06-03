@@ -1,9 +1,19 @@
 from flask import Flask, jsonify, request
+from flask_cors import CORS
 
 from market_data import get_market_data
 from signal_engine import generate_signal
 
 app = Flask(__name__)
+
+CORS(
+    app,
+    resources={
+        r"/*": {
+            "origins": "*"
+        }
+    }
+)
 
 @app.route("/")
 def home():
