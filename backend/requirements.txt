@@ -1,7 +1,6 @@
 flask
 flask-cors
 pandas
-numpy
-scikit-learn
-joblib
 requests
+joblib
+numpy
