@@ -1,42 +1,36 @@
-def predict_signal(features):
+import joblib
+from filters import session_filter, volatility_filter
 
-    body, rng, bullish, trend = features
+model = joblib.load("model.pkl")
 
-    score = 0
 
-    # candle direction
-    if bullish == 1:
-        score += 0.3
-    else:
-        score -= 0.3
+def predict_signal(features, df):
 
-    # trend filter
-    if trend == 1:
-        score += 0.4
-    else:
-        score -= 0.4
+    session_ok = session_filter()
+    vol_ok = volatility_filter(df)
 
-    # volatility filter
-    if rng > body:
-        score += 0.1
+    if session_ok == 0 or vol_ok == 0:
+        return {
+            "signal": "AVOID",
+            "reason": "Market condition not good",
+            "up_probability": 0.5,
+            "down_probability": 0.5
+        }
 
-    # final probability conversion
-    up_prob = 0.5 + score
-    down_prob = 1 - up_prob
+    prob = model.predict_proba([features])[0]
 
-    # clamp values
-    up_prob = max(0.1, min(0.9, up_prob))
-    down_prob = 1 - up_prob
+    up = float(prob[1])
+    down = float(prob[0])
 
-    if up_prob >= 0.65:
+    if up >= 0.70:
         signal = "BUY"
-    elif down_prob >= 0.65:
+    elif down >= 0.70:
         signal = "SELL"
     else:
         signal = "AVOID"
 
     return {
         "signal": signal,
-        "up_probability": round(up_prob, 2),
-        "down_probability": round(down_prob, 2)
+        "up_probability": round(up, 2),
+        "down_probability": round(down, 2)
     }
