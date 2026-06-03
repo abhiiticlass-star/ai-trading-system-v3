@@ -1,13 +1,14 @@
 import requests
+import pandas as pd
 
 API_KEY = "8e9f4f263cd044cdb3a0a6972179737a"
 
-def get_candles(pair="EURUSD"):
+def get_candles(pair="EURUSD", timeframe="1min"):
 
     try:
+
         url = "https://api.twelvedata.com/time_series"
 
-        # IMPORTANT: correct symbol format
         symbol_map = {
             "EURUSD": "EUR/USD",
             "GBPUSD": "GBP/USD",
@@ -19,32 +20,61 @@ def get_candles(pair="EURUSD"):
 
         params = {
             "symbol": symbol,
-            "interval": "1min",
-            "outputsize": 50,
+            "interval": timeframe,
+            "outputsize": 100,
             "apikey": API_KEY
         }
 
-        r = requests.get(url, params=params, timeout=10)
-        data = r.json()
+        response = requests.get(
+            url,
+            params=params,
+            timeout=15
+        )
 
-        # 🔥 DEBUG SAFE CHECK
+        data = response.json()
+
         if "values" not in data:
-            print("API RESPONSE ERROR:", data)
+
+            print("TWELVEDATA ERROR:", data)
+
             return []
 
-        candles = data["values"]
+        candles = []
 
-        result = []
-        for c in candles:
-            result.append({
-                "open": float(c["open"]),
-                "high": float(c["high"]),
-                "low": float(c["low"]),
-                "close": float(c["close"])
+        for candle in data["values"]:
+
+            candles.append({
+
+                "open": float(candle["open"]),
+                "high": float(candle["high"]),
+                "low": float(candle["low"]),
+                "close": float(candle["close"])
+
             })
 
-        return result
+        candles.reverse()
+
+        return candles
 
     except Exception as e:
-        print("EXCEPTION:", e)
+
+        print("MARKET DATA ERROR:", e)
+
         return []
+
+
+def get_market_data(
+    pair="EURUSD",
+    timeframe="1min"
+):
+
+    candles = get_candles(
+        pair,
+        timeframe
+    )
+
+    if not candles:
+
+        return pd.DataFrame()
+
+    return pd.DataFrame(candles)
