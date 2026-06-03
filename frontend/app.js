@@ -1,4 +1,4 @@
-const API = "https://your-render-url.onrender.com";
+const API = "https://ai-trading-system-v3.onrender.com";
 
 let chart;
 
