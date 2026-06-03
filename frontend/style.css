@@ -5,13 +5,19 @@ body {
   font-family: Arial;
 }
 
-button {
-  padding: 12px;
+select, button {
+  padding: 10px;
   margin: 10px;
-  font-size: 18px;
+  font-size: 16px;
 }
 
 #signalBox {
   margin-top: 20px;
-  font-size: 22px;
+  font-size: 20px;
+}
+
+canvas {
+  margin-top: 20px;
+  max-width: 600px;
+  background: #111;
 }
