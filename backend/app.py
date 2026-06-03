@@ -15,31 +15,52 @@ def home():
 
 @app.route("/signal")
 def signal():
-    pair = request.args.get("pair", "EURUSD")
+    try:
+        pair = request.args.get("pair", "EURUSD")
 
-    candles = get_candles(pair)
+        candles = get_candles(pair)
 
-    if len(candles) < 20:
-        return {"error": "Not enough data"}
+        # SAFE CHECK 1
+        if not candles or len(candles) < 5:
+            return {
+                "pair": pair,
+                "signal": "AVOID",
+                "reason": "No candle data"
+            }
 
-    df = pd.DataFrame(candles)
-    df = create_features(df)
+        df = pd.DataFrame(candles)
+        df = create_features(df)
 
-    last = df.iloc[-1]
+        # SAFE CHECK 2
+        if "body" not in df.columns:
+            return {
+                "pair": pair,
+                "signal": "AVOID",
+                "reason": "Feature error"
+            }
 
-    features = [
-        last["body"],
-        last["range"],
-        last["bullish"],
-        last["trend"]
-    ]
+        last = df.iloc[-1]
 
-    result = predict_signal(features)
+        features = [
+            float(last["body"]),
+            float(last["range"]),
+            int(last["bullish"]),
+            int(last["trend"])
+        ]
 
-    return {
-        "pair": pair,
-        **result
-    }
+        result = predict_signal(features)
+
+        return {
+            "pair": pair,
+            **result
+        }
+
+    except Exception as e:
+        return {
+            "pair": pair,
+            "signal": "AVOID",
+            "error": str(e)
+        }
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
