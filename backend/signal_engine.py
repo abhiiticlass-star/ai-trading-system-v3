@@ -1,81 +1,116 @@
-import os
-import joblib
+import pandas as pd
 
-MODEL_PATH = os.path.join(os.path.dirname(__file__), "model.pkl")
+from indicators import get_trend, rsi
+from patterns import detect_pattern
+from support_resistance import get_support_resistance
+from breakout import breakout_check
+from session_filter import current_session
+from volatility import volatility
+from confidence_engine import confidence_score
 
-# 🔥 SAFE MODEL LOAD (no crash)
-model = None
-if os.path.exists(MODEL_PATH):
-    try:
-        model = joblib.load(MODEL_PATH)
-    except:
-        model = None
+def generate_signal(df):
 
+    if df is None or len(df) < 50:
+        return {
+            "signal": "AVOID",
+            "reason": "Not enough data"
+        }
 
-def predict_signal(features, df=None):
+    df["rsi"] = rsi(df["close"])
 
-    body, rng, bullish, trend = features
+    trend = get_trend(df)
 
-    # =========================
-    # 🔥 CASE 1: ML MODEL AVAILABLE
-    # =========================
-    if model is not None:
+    pattern = detect_pattern(df)
 
-        try:
-            prob = model.predict_proba([features])[0]
+    support, resistance = get_support_resistance(df)
 
-            up = float(prob[1])
-            down = float(prob[0])
+    breakout = breakout_check(
+        df,
+        support,
+        resistance
+    )
 
-            if up > 0.7:
-                signal = "BUY"
-            elif down > 0.7:
-                signal = "SELL"
-            else:
-                signal = "AVOID"
+    session = current_session()
 
-            return {
-                "signal": signal,
-                "up_probability": round(up, 2),
-                "down_probability": round(down, 2)
-            }
+    vol = volatility(df)
 
-        except:
-            pass  # fallback to rule-based
+    confidence = confidence_score(
+        trend,
+        pattern,
+        breakout
+    )
 
+    latest_rsi = df["rsi"].iloc[-1]
 
-    # =========================
-    # 🔥 CASE 2: FALLBACK AI (ALWAYS WORKS)
-    # =========================
+    signal = "AVOID"
 
-    score = 0.5
+    up_probability = 0.50
+    down_probability = 0.50
 
-    if bullish == 1:
-        score += 0.2
-    else:
-        score -= 0.2
+    # BUY Logic
+    if (
+        trend == "Bullish"
+        and latest_rsi > 50
+        and confidence >= 70
+    ):
 
-    if trend == 1:
-        score += 0.25
-    else:
-        score -= 0.25
-
-    if rng > body:
-        score += 0.05
-
-    # clamp
-    up = max(0.1, min(0.9, score))
-    down = 1 - up
-
-    if up >= 0.65:
         signal = "BUY"
-    elif down >= 0.65:
+
+        up_probability = round(
+            confidence / 100,
+            2
+        )
+
+        down_probability = round(
+            1 - up_probability,
+            2
+        )
+
+    # SELL Logic
+    elif (
+        trend == "Bearish"
+        and latest_rsi < 50
+        and confidence >= 70
+    ):
+
         signal = "SELL"
-    else:
-        signal = "AVOID"
+
+        down_probability = round(
+            confidence / 100,
+            2
+        )
+
+        up_probability = round(
+            1 - down_probability,
+            2
+        )
 
     return {
+
         "signal": signal,
-        "up_probability": round(up, 2),
-        "down_probability": round(down, 2)
+
+        "confidence": confidence,
+
+        "up_probability": up_probability,
+
+        "down_probability": down_probability,
+
+        "trend_m1": trend,
+
+        "trend_m5": trend,
+
+        "support": support,
+
+        "resistance": resistance,
+
+        "breakout": breakout,
+
+        "pattern": pattern,
+
+        "session": session,
+
+        "volatility": vol,
+
+        "analysis":
+        "Layer Structural Confluence"
     }
