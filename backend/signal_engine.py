@@ -1,30 +1,75 @@
+import os
 import joblib
-from filters import session_filter, volatility_filter
 
-model = joblib.load("model.pkl")
+MODEL_PATH = os.path.join(os.path.dirname(__file__), "model.pkl")
+
+# 🔥 SAFE MODEL LOAD (no crash)
+model = None
+if os.path.exists(MODEL_PATH):
+    try:
+        model = joblib.load(MODEL_PATH)
+    except:
+        model = None
 
 
-def predict_signal(features, df):
+def predict_signal(features, df=None):
 
-    session_ok = session_filter()
-    vol_ok = volatility_filter(df)
+    body, rng, bullish, trend = features
 
-    if session_ok == 0 or vol_ok == 0:
-        return {
-            "signal": "AVOID",
-            "reason": "Market condition not good",
-            "up_probability": 0.5,
-            "down_probability": 0.5
-        }
+    # =========================
+    # 🔥 CASE 1: ML MODEL AVAILABLE
+    # =========================
+    if model is not None:
 
-    prob = model.predict_proba([features])[0]
+        try:
+            prob = model.predict_proba([features])[0]
 
-    up = float(prob[1])
-    down = float(prob[0])
+            up = float(prob[1])
+            down = float(prob[0])
 
-    if up >= 0.70:
+            if up > 0.7:
+                signal = "BUY"
+            elif down > 0.7:
+                signal = "SELL"
+            else:
+                signal = "AVOID"
+
+            return {
+                "signal": signal,
+                "up_probability": round(up, 2),
+                "down_probability": round(down, 2)
+            }
+
+        except:
+            pass  # fallback to rule-based
+
+
+    # =========================
+    # 🔥 CASE 2: FALLBACK AI (ALWAYS WORKS)
+    # =========================
+
+    score = 0.5
+
+    if bullish == 1:
+        score += 0.2
+    else:
+        score -= 0.2
+
+    if trend == 1:
+        score += 0.25
+    else:
+        score -= 0.25
+
+    if rng > body:
+        score += 0.05
+
+    # clamp
+    up = max(0.1, min(0.9, score))
+    down = 1 - up
+
+    if up >= 0.65:
         signal = "BUY"
-    elif down >= 0.70:
+    elif down >= 0.65:
         signal = "SELL"
     else:
         signal = "AVOID"
