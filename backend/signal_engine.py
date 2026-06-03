@@ -1,22 +1,27 @@
-import joblib
-
-model = joblib.load("model.pkl")
-
 def predict_signal(features):
-    prob = model.predict_proba([features])[0]
 
-    up = float(prob[1])
-    down = float(prob[0])
+    # temporary logic (NO MODEL REQUIRED)
+    body, rng, bullish, trend = features
 
-    if up >= 0.70:
-        signal = "BUY"
-    elif down >= 0.70:
-        signal = "SELL"
+    score = (bullish + trend) / 2
+
+    if score > 0.7:
+        return {
+            "signal": "BUY",
+            "up_probability": 0.75,
+            "down_probability": 0.25
+        }
+
+    elif score < 0.3:
+        return {
+            "signal": "SELL",
+            "up_probability": 0.25,
+            "down_probability": 0.75
+        }
+
     else:
-        signal = "AVOID"
-
-    return {
-        "signal": signal,
-        "up_probability": up,
-        "down_probability": down
-    }
+        return {
+            "signal": "AVOID",
+            "up_probability": 0.5,
+            "down_probability": 0.5
+        }
